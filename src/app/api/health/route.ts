@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
           body: JSON.stringify({
             model: 'deepseek-chat',
             messages: [{ role: 'user', content: '测试连接' }],
-            max_tokens: 10
+            max_tokens: 10,
+            temperature: 0.7
           })
         })
         

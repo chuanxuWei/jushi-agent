@@ -28,13 +28,13 @@ export class ChatGenerator {
       const systemPrompt = this.buildEnhancedSystemPrompt(emotionScore, emotionTags)
       
       const response = await this.client.chat.completions.create({
-        model: 'deepseek-ai/DeepSeek-V2.5',
+        model: 'deepseek-chat', // 修复为正确的模型名称
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        max_tokens: 600, // 平衡质量和速度
-        temperature: 0.6, // 稍微降低随机性提升响应速度
+        max_tokens: 600,
+        temperature: 0.6,
       })
 
       const aiResponse = response.choices[0]?.message?.content || '抱歉，我暂时无法生成回复。'
