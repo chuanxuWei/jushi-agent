@@ -1,0 +1,257 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 聊天界面样式 */
+.chat-interface {
+  @apply flex h-screen flex-col bg-gradient-to-br from-gray-50 via-white to-blue-50;
+  @apply dark:from-gray-900 dark:via-gray-800 dark:to-gray-900;
+}
+
+.chat-header {
+  @apply relative border-b bg-white/80 backdrop-blur-lg p-4 shadow-sm;
+  @apply dark:bg-gray-900/80 dark:border-gray-800;
+}
+
+.chat-header::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5;
+  @apply dark:from-blue-500/10 dark:to-purple-500/10;
+}
+
+.chat-header-content {
+  @apply relative z-10 flex items-center justify-between;
+}
+
+.messages-container {
+  @apply flex-1 overflow-y-auto p-6 space-y-6;
+  /* 自定义滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(203 213 225) transparent;
+}
+
+.messages-container::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-500;
+}
+
+/* 打字动画 */
+.typing-indicator {
+  @apply flex items-center gap-2 px-4 py-3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm;
+  @apply animate-pulse;
+}
+
+.typing-dot {
+  @apply w-2 h-2 bg-gray-400 rounded-full animate-bounce;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* 输入区域 */
+.input-form {
+  @apply relative border-t bg-white/80 backdrop-blur-lg p-4 shadow-lg;
+  @apply dark:bg-gray-900/80 dark:border-gray-800;
+}
+
+.input-form::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5;
+  @apply dark:from-blue-500/10 dark:to-purple-500/10;
+}
+
+.input-container {
+  @apply relative z-10 flex gap-3 items-end;
+}
+
+.input-textarea {
+  @apply flex-1 min-h-[44px] max-h-[120px] px-4 py-3 border border-gray-200;
+  @apply bg-white/90 backdrop-blur-sm text-sm resize-none rounded-2xl;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500;
+  @apply dark:bg-gray-800/90 dark:border-gray-700 dark:text-gray-100;
+  @apply transition-all duration-200 shadow-sm hover:shadow-md;
+}
+
+.send-button {
+  @apply px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600;
+  @apply text-white font-medium rounded-2xl shadow-md;
+  @apply hover:shadow-lg hover:scale-105 active:scale-95;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100;
+  @apply transition-all duration-200 flex items-center gap-2;
+}
+
+/* 情绪输入区域 */
+.emotion-input-container {
+  @apply p-4 border-t bg-gradient-to-r from-orange-50 to-pink-50;
+  @apply dark:from-orange-900/20 dark:to-pink-900/20 dark:border-gray-800;
+}
+
+/* 任务卡片 */
+.task-card {
+  @apply rounded-xl border bg-white/80 backdrop-blur-sm p-6 shadow-sm;
+  @apply hover:shadow-md transition-all duration-200;
+  @apply dark:bg-gray-800/80 dark:border-gray-700;
+}
+
+.task-card:hover {
+  @apply shadow-lg transform scale-[1.02];
+}
+
+.subtask-item {
+  @apply flex items-center gap-3 rounded-lg p-3 hover:bg-gray-50;
+  @apply dark:hover:bg-gray-700/50 transition-colors duration-150;
+}
+
+/* 番茄钟计时器 */
+.pomodoro-timer {
+  @apply flex flex-col items-center gap-6 rounded-xl border bg-white/80;
+  @apply backdrop-blur-sm p-8 shadow-sm dark:bg-gray-800/80 dark:border-gray-700;
+}
+
+.time-display {
+  @apply text-5xl font-bold tabular-nums text-transparent bg-clip-text;
+  @apply bg-gradient-to-r from-blue-600 to-purple-600;
+  @apply dark:from-blue-400 dark:to-purple-400;
+}
+
+/* 动画效果 */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+/* 代码块样式优化 */
+.prose pre {
+  @apply !bg-gray-900 !text-gray-100 rounded-lg overflow-hidden shadow-lg;
+}
+
+.prose code {
+  @apply !text-sm !font-mono;
+}
+
+.prose blockquote {
+  @apply !border-l-4 !border-blue-500 !bg-blue-50 dark:!bg-blue-900/20;
+  @apply !pl-6 !py-4 !rounded-r-lg !shadow-sm;
+}
+
+/* 表格样式 */
+.prose table {
+  @apply !shadow-sm !rounded-lg !overflow-hidden;
+}
+
+.prose th {
+  @apply !bg-gray-100 dark:!bg-gray-800 !font-semibold;
+}
+
+.prose td {
+  @apply !border-gray-200 dark:!border-gray-700;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .chat-interface {
+    @apply h-screen;
+  }
+  
+  .messages-container {
+    @apply p-4 space-y-4;
+  }
+  
+  .input-form {
+    @apply p-3;
+  }
+  
+  .input-container {
+    @apply gap-2;
+  }
+  
+  .input-textarea {
+    @apply px-3 py-2 text-sm;
+  }
+  
+  .send-button {
+    @apply px-4 py-2 text-sm;
+  }
+} 
