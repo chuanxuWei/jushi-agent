@@ -64,6 +64,10 @@ Desktop.ini
 /notes/
 *.private.*
 
+# 个人开发工具配置
+.cusorrules/
+.kiro/
+
 # 部署相关
 .netlify/
 .railway/
