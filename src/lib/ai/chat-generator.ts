@@ -10,6 +10,9 @@ export class ChatGenerator {
         apiKey: process.env.SILICONFLOW_API_KEY,
         baseURL: "https://api.siliconflow.cn/v1",
       })
+      console.log('聊天生成器: API客户端初始化成功')
+    } else {
+      console.warn('聊天生成器: API密钥未配置，将使用模拟回复')
     }
   }
 
@@ -39,7 +42,19 @@ export class ChatGenerator {
       return aiResponse
 
     } catch (error: any) {
-      console.error('AI回复生成失败，使用本地模板:', error)
+      console.error('AI回复生成失败详情:', {
+        error: error.message || error,
+        stack: error.stack,
+        apiKey: this.client ? '已配置' : '未配置',
+        environment: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV
+      })
+      
+      // 在生产环境中抛出错误而不是降级到模拟回复，这样可以看到真实的错误信息
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(`API调用失败: ${error.message || error}`)
+      }
+      
       return this.getLocalResponse(message, emotionScore)
     }
   }

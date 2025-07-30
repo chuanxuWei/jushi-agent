@@ -41,7 +41,7 @@ npm install
 创建 `.env.local` 文件：
 
 ```env
-# AI API 配置 (必需)
+# AI API 配置 (必需 - 没有此密钥将无法使用AI功能)
 SILICONFLOW_API_KEY=你的硅基流动API密钥
 
 # Next.js 配置
@@ -226,9 +226,26 @@ src/
 
 ### Vercel部署 (推荐)
 
-1. 连接GitHub仓库到Vercel
-2. 配置环境变量
-3. 自动部署
+1. **连接仓库**: 将GitHub仓库连接到Vercel
+2. **配置环境变量**: 在Vercel控制台设置环境变量
+   ```env
+   SILICONFLOW_API_KEY=你的API密钥
+   NEXTAUTH_URL=https://your-domain.vercel.app
+   NEXTAUTH_SECRET=生产环境密钥
+   NODE_ENV=production
+   ```
+3. **自动部署**: Vercel会自动部署应用
+
+### 故障排除 - 部署版本无法调用AI
+
+如果本地正常但部署版本无法使用AI功能：
+
+1. **检查环境变量**: 访问 `/api/health` 端点检查配置状态
+2. **确认API密钥**: 在Vercel控制台确认 `SILICONFLOW_API_KEY` 已正确配置
+3. **重新部署**: 修改环境变量后需要重新部署
+4. **查看日志**: 在Vercel控制台查看函数日志排查错误
+
+详细部署指南请查看: [deployment-guide.md](./deployment-guide.md)
 
 ### 手动部署
 

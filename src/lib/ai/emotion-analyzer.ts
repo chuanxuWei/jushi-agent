@@ -11,6 +11,9 @@ export class EmotionAnalyzer {
         apiKey: process.env.SILICONFLOW_API_KEY,
         baseURL: "https://api.siliconflow.cn/v1",
       })
+      console.log('情绪分析器: API客户端初始化成功')
+    } else {
+      console.warn('情绪分析器: API密钥未配置，将使用模拟数据')
     }
   }
 
@@ -34,7 +37,8 @@ export class EmotionAnalyzer {
 7-8分：轻度焦虑/一般
 9-10分：积极/良好
 
-请返回JSON格式：{"score": 数字, "tags": ["标签1", "标签2"], "reasoning": "简短分析原因"}
+重要：必须返回纯JSON格式，不要使用markdown代码块，不要添加任何其他文字说明。
+格式：{"score": 数字, "tags": ["标签1", "标签2"], "reasoning": "简短分析原因"}
 
 要求简洁准确，重点关注焦虑程度。`
         }, {
@@ -50,9 +54,19 @@ export class EmotionAnalyzer {
         throw new Error('API返回空结果')
       }
 
+      // 清理响应文本，移除markdown格式
+      let cleanResult = result.trim()
+      
+      // 移除markdown代码块标记
+      if (cleanResult.startsWith('```json')) {
+        cleanResult = cleanResult.replace(/^```json\s*/, '').replace(/\s*```$/, '')
+      } else if (cleanResult.startsWith('```')) {
+        cleanResult = cleanResult.replace(/^```\s*/, '').replace(/\s*```$/, '')
+      }
+      
       // 尝试解析JSON响应
       try {
-        const emotionData = JSON.parse(result)
+        const emotionData = JSON.parse(cleanResult)
         const analysis: EmotionAnalysis = {
           score: Math.max(1, Math.min(10, emotionData.score || 5)),
           tags: Array.isArray(emotionData.tags) ? emotionData.tags : ['需要关注'],
@@ -62,7 +76,9 @@ export class EmotionAnalyzer {
         console.log('情绪分析结果:', analysis)
         return analysis
       } catch (parseError) {
-        console.warn('JSON解析失败，使用默认分析:', parseError)
+        console.warn('JSON解析失败，原始响应:', result)
+        console.warn('清理后响应:', cleanResult)
+        console.warn('解析错误:', parseError)
         // 如果JSON解析失败，使用文本分析
         return this.parseTextualResponse(result, text)
       }

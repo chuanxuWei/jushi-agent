@@ -59,12 +59,36 @@ CodePen **不适合**你的项目，因为：
 
 ### 环境变量配置
 在部署平台设置以下环境变量：
+
+#### 必需环境变量
 ```env
-SILICONFLOW_API_KEY=你的API密钥
+SILICONFLOW_API_KEY=你的SiliconFlow_API密钥
+```
+> ⚠️ **重要**: 没有此API密钥，AI功能将无法工作，只能使用模拟回复
+
+#### 推荐环境变量
+```env
 NEXTAUTH_URL=https://your-domain.com
-NEXTAUTH_SECRET=生产环境密钥
+NEXTAUTH_SECRET=随机生成的密钥字符串  
 NODE_ENV=production
 ```
+
+#### Vercel部署环境变量设置步骤
+1. 登录 [Vercel Dashboard](https://vercel.com/dashboard)
+2. 选择你的项目
+3. 进入 "Settings" > "Environment Variables"
+4. 添加以下变量：
+   - **Name**: `SILICONFLOW_API_KEY`
+   - **Value**: 你的SiliconFlow API密钥
+   - **Environments**: Production, Preview, Development
+5. 点击 "Save" 保存
+6. 重新部署应用
+
+#### 获取SiliconFlow API密钥
+1. 访问 [SiliconFlow官网](https://siliconflow.cn)
+2. 注册并登录账户
+3. 在控制台创建API密钥
+4. 复制密钥到环境变量配置
 
 ### 构建验证
 ```bash
