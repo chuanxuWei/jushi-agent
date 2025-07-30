@@ -96,6 +96,12 @@ export function ChatInterface({
     }
 
     try {
+      console.log('发送聊天请求:', { 
+        message: userMessage.content.substring(0, 50),
+        taskId: currentTaskId,
+        timestamp: new Date().toISOString()
+      })
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -107,7 +113,19 @@ export function ChatInterface({
         })
       })
 
+      if (!response.ok) {
+        console.error('API响应错误:', { 
+          status: response.status, 
+          statusText: response.statusText 
+        })
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
       const data = await response.json()
+      console.log('API响应成功:', { 
+        success: data.success, 
+        hasResponse: !!data.data?.response 
+      })
 
       if (data.success) {
         const assistantMessage: Message = {

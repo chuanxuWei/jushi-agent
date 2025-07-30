@@ -13,7 +13,12 @@ export async function POST(request: NextRequest) {
     const body: ChatRequest = await request.json()
     const { message, taskId } = body
 
-    console.log('Chat API: 收到消息:', { message, taskId })
+    console.log('Chat API: 收到消息:', { 
+      message: message.substring(0, 100), 
+      taskId, 
+      messageLength: message.length,
+      timestamp: new Date().toISOString()
+    })
 
     // 1. 分析情绪
     const emotionAnalysis = await emotionAnalyzer.analyzeEmotion(message)
@@ -46,14 +51,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response)
     
   } catch (error) {
-    console.error('Chat API Error:', error)
+    console.error('Chat API Error详情:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV
+    })
     
     const errorResponse: APIResponse<ChatResponse> = {
       success: false,
       error: {
         code: 'CHAT_ERROR',
         message: '抱歉，我现在遇到了一些技术问题。请稍后再试，或者描述一下您遇到的具体情况。',
-        details: process.env.NODE_ENV === 'development' ? String(error) : undefined
+        details: process.env.NODE_ENV === 'development' ? String(error) : 
+                 `Error: ${error instanceof Error ? error.message : String(error)}`
       },
       timestamp: new Date().toISOString()
     }
