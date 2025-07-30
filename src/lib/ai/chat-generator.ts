@@ -28,7 +28,7 @@ export class ChatGenerator {
       const systemPrompt = this.buildEnhancedSystemPrompt(emotionScore, emotionTags)
       
       const response = await this.client.chat.completions.create({
-        model: 'deepseek-chat', // 修复为正确的模型名称
+        model: 'Qwen/Qwen2.5-72B-Instruct', // 使用硅基流动支持的Qwen模型
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: 'Qwen/Qwen2.5-72B-Instruct',
             messages: [{ role: 'user', content: '测试连接' }],
             max_tokens: 10,
             temperature: 0.7

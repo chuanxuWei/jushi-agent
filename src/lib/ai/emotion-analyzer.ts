@@ -26,7 +26,7 @@ export class EmotionAnalyzer {
 
     try {
       const response = await this.client.chat.completions.create({
-        model: 'deepseek-chat',
+        model: 'Qwen/Qwen2.5-72B-Instruct',
         messages: [{
           role: 'system',
           content: `你是专业的情绪分析师。分析用户文本中的情绪状态，返回1-10分的评分和情绪标签。
