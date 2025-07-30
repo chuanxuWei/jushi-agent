@@ -13,26 +13,57 @@ export async function POST(request: NextRequest) {
     const body: ChatRequest = await request.json()
     const { message, taskId } = body
 
+    // 输入验证
+    if (!message || typeof message !== 'string') {
+      throw new Error('消息内容无效')
+    }
+    
+    if (message.length > 1000) {
+      throw new Error('消息内容过长，请缩短到1000字符以内')
+    }
+
+    // 清理输入
+    const cleanMessage = message.trim()
+    if (!cleanMessage) {
+      throw new Error('消息内容不能为空')
+    }
+
     console.log('Chat API: 收到消息:', { 
-      message: message.substring(0, 100), 
+      message: cleanMessage.substring(0, 100), 
       taskId, 
-      messageLength: message.length,
+      messageLength: cleanMessage.length,
       timestamp: new Date().toISOString()
     })
 
-    // 1. 分析情绪
-    const emotionAnalysis = await emotionAnalyzer.analyzeEmotion(message)
-    console.log('情绪分析结果:', emotionAnalysis)
+    // 1. 分析情绪 - 添加错误处理
+    console.log('开始情绪分析...')
+    let emotionAnalysis
+    try {
+      emotionAnalysis = await emotionAnalyzer.analyzeEmotion(cleanMessage)
+      console.log('情绪分析结果:', emotionAnalysis)
+    } catch (error) {
+      console.error('情绪分析失败:', error)
+      // 使用默认值继续
+      emotionAnalysis = { score: 7, tags: ['neutral'], reasoning: '分析失败，使用默认值' }
+    }
     
-    // 2. 生成AI回复 - 使用真实的AI服务
-    const aiResponse = await chatGenerator.generateResponse(
-      message, 
-      emotionAnalysis.score, 
-      emotionAnalysis.tags
-    )
+    // 2. 生成AI回复 - 添加错误处理
+    console.log('开始生成AI回复...')
+    let aiResponse
+    try {
+      aiResponse = await chatGenerator.generateResponse(
+        cleanMessage, 
+        emotionAnalysis.score, 
+        emotionAnalysis.tags
+      )
+      console.log('AI回复生成完成，长度:', aiResponse.length)
+    } catch (error) {
+      console.error('AI回复生成失败:', error)
+      throw error // 重新抛出以触发外层错误处理
+    }
     
     // 3. 检测是否需要任务拆解
-    const needsTaskDecomposition = containsTaskKeywords(message)
+    const needsTaskDecomposition = containsTaskKeywords(cleanMessage)
     
     // 4. 构建响应
     const response: APIResponse<ChatResponse> = {

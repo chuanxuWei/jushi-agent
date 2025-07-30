@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "src/app/api/chat/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/health/route.ts": {
+      "maxDuration": 10
+    }
+  }
+}
