@@ -22,9 +22,12 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Environment variables
+# Environment variables (包含API密钥等敏感信息)
+.env
 .env*.local
 .env.local
+.env.production
+.env.development
 
 # Vercel
 .vercel
@@ -43,4 +46,38 @@ logs
 
 # Prisma
 /prisma/dev.db
-/prisma/migrations/dev.db 
+/prisma/migrations/dev.db
+
+# 临时文件和缓存
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+
+# 操作系统文件
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# 个人配置和笔记
+/docs/personal/
+/notes/
+*.private.*
+
+# 部署相关
+.netlify/
+.railway/
+.render/
+
+# AI API 测试文件
+test-api-keys.js
+api-test-results.json
+
+# 用户上传的文件
+/uploads/
+/user-data/
+
+# 备份文件
+*.backup
+*.bak
+*.old 
