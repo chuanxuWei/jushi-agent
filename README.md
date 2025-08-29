@@ -22,7 +22,7 @@
 
 ### 🚧 规划中功能
 
-- 番茄钟专注计时
+- 番茄钟专注计时（已在聊天页提供基础计时器与命令：`/pomodoro start [分钟]`、`/pomodoro pause`、`/pomodoro resume`、`/pomodoro reset`）
 - 任务进度管理
 - 情绪趋势分析
 - 成长笔记记录

@@ -285,8 +285,7 @@ git push origin feature/new-feature-name
 ## 📞 联系方式
 
 - 项目Issues: GitHub Issues
-- 实时讨论: [可以考虑创建Discord/微信群]
-- 邮箱: [项目维护者邮箱]
+- 邮箱: [feynman1099@gmail.com]
 
 ---
 

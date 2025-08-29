@@ -8,6 +8,19 @@ const emotionAnalyzer = new EmotionAnalyzer()
 const chatGenerator = new ChatGenerator()
 const taskDecomposer = new TaskDecomposer()
 
+// 添加 CORS 预检请求处理
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '86400',
+    },
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: ChatRequest = await request.json()
@@ -79,7 +92,13 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Chat API: 响应生成成功')
-    return NextResponse.json(response)
+    return NextResponse.json(response, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    })
     
   } catch (error) {
     console.error('Chat API Error详情:', {
@@ -100,7 +119,14 @@ export async function POST(request: NextRequest) {
       timestamp: new Date().toISOString()
     }
 
-    return NextResponse.json(errorResponse, { status: 500 })
+    return NextResponse.json(errorResponse, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      },
+    })
   }
 }
 

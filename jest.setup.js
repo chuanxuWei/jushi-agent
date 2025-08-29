@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom'
+import React from 'react'
+
+// 测试环境变量
+process.env.SILICONFLOW_API_KEY = process.env.SILICONFLOW_API_KEY || 'unit-test-key'
 
 // 模拟 next/navigation
 jest.mock('next/navigation', () => ({
@@ -55,3 +59,21 @@ beforeAll(() => {
 afterAll(() => {
   console.error = originalError
 }) 
+
+// ESM 组件简化 mock，避免解析/样式干扰
+jest.mock('react-markdown', () => ({
+  __esModule: true,
+  default: (props) => React.createElement(React.Fragment, null, props.children),
+}))
+
+jest.mock('react-syntax-highlighter', () => ({
+  Prism: (props) => React.createElement('pre', null, props.children),
+}))
+
+jest.mock('react-syntax-highlighter/dist/esm/styles/prism', () => ({
+  __esModule: true,
+  oneDark: {},
+  oneLight: {},
+}))
+
+jest.mock('remark-gfm', () => () => (tree) => tree)

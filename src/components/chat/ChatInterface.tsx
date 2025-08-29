@@ -2,11 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import PomodoroTimer from '../pomodoro/PomodoroTimer'
+import { usePomodoroStore } from '../../store/pomodoro'
 import { EmotionScoreInput } from './EmotionScoreInput'
 import { MessageBubble } from './MessageBubble'
 import { Message } from '@/types'
 import { generateId } from '@/lib/utils'
-import { Send, Trash2, Sparkles, MessageCircle, Sun, Moon, Monitor } from 'lucide-react'
+import { sendChatMessage } from '@/lib/api-client'
+import { Send, Trash2, Sparkles, MessageCircle, Sun, Moon, Monitor, Wifi, WifiOff } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect as useEffectTheme, useState as useStateTheme } from 'react'
 
@@ -24,13 +27,16 @@ export function ChatInterface({
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [messageQueue, setMessageQueue] = useState<string[]>([])
   const [showEmotionInput, setShowEmotionInput] = useState(false)
   const [suggestedEmotionScore, setSuggestedEmotionScore] = useState<number | undefined>()
   const [currentTaskId, setCurrentTaskId] = useState<string | undefined>()
+  const [isOnline, setIsOnline] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useStateTheme(false)
+  const pomodoro = usePomodoroStore()
 
   const scrollToBottom = () => {
     if (messagesEndRef.current && typeof messagesEndRef.current.scrollIntoView === 'function') {
@@ -57,6 +63,35 @@ export function ChatInterface({
     setMounted(true)
   }, [])
 
+  // 监听网络状态
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    // 初始化网络状态
+    setIsOnline(navigator.onLine)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // 监听isLoading状态变化，处理消息队列
+  useEffect(() => {
+    if (!isLoading && messageQueue.length > 0) {
+      const [firstMessage, ...restQueue] = messageQueue
+      setMessageQueue(restQueue)
+      // 延迟一小段时间后发送队列中的消息
+      setTimeout(() => {
+        handleSendMessage(firstMessage)
+      }, 100)
+    }
+  }, [isLoading, messageQueue])
+
   const getThemeIcon = () => {
     if (!mounted) return <Monitor className="w-4 h-4" />
     switch (theme) {
@@ -74,19 +109,78 @@ export function ChatInterface({
     setTheme(themes[nextIndex])
   }
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return
+  const handleSendMessage = async (messageContent?: string) => {
+    const content = messageContent || input.trim()
+    if (!content) return
+
+    // 检查网络连接
+    if (!isOnline) {
+      const offlineMessage: Message = {
+        id: generateId(),
+        user_id: 'current-user',
+        role: 'assistant',
+        content: '⚠️ 网络连接已断开，请检查网络后重试',
+        created_at: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, offlineMessage])
+      return
+    }
+
+    // 命令解析：/pomodoro
+    if (content.startsWith('/pomodoro')) {
+      const parts = content.split(/\s+/)
+      const sub = parts[1] || ''
+      const arg = parts[2]
+      let feedback = '未知命令，可用子命令：start [分钟] | pause | resume | reset'
+      try {
+        if (sub === 'start') {
+          const minutes = arg ? Math.max(1, parseInt(arg, 10) || 25) : undefined
+          pomodoro.start(minutes)
+          feedback = `已开始${minutes ?? '默认'}分钟番茄钟`
+        } else if (sub === 'pause') {
+          pomodoro.pause()
+          feedback = '已暂停番茄钟'
+        } else if (sub === 'resume') {
+          pomodoro.resume()
+          feedback = '已继续番茄钟'
+        } else if (sub === 'reset') {
+          pomodoro.reset()
+          feedback = '已重置番茄钟'
+        }
+      } catch (e) {
+        feedback = '番茄钟命令执行失败'
+      }
+
+      const sysMessage: Message = {
+        id: generateId(),
+        user_id: 'current-user',
+        role: 'assistant',
+        content: feedback,
+        created_at: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, sysMessage])
+      setInput('')
+      return
+    }
 
     const userMessage: Message = {
       id: generateId(),
       user_id: 'current-user', // TODO: 从认证系统获取
       role: 'user',
-      content: input.trim(),
+      content: content,
       task_id: currentTaskId,
       created_at: new Date().toISOString()
     }
 
     setMessages(prev => [...prev, userMessage])
+    
+    // 如果正在加载，将消息添加到队列中
+    if (isLoading) {
+      setMessageQueue(prev => [...prev, content])
+      setInput('')
+      return
+    }
+
     setInput('')
     setIsLoading(true)
 
@@ -102,64 +196,49 @@ export function ChatInterface({
         timestamp: new Date().toISOString()
       })
 
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: userMessage.content,
-          taskId: currentTaskId
-        })
-      })
+      const response = await sendChatMessage(userMessage.content, currentTaskId)
 
-      if (!response.ok) {
-        console.error('API响应错误:', { 
-          status: response.status, 
-          statusText: response.statusText 
-        })
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-      }
-
-      const data = await response.json()
-      console.log('API响应成功:', { 
-        success: data.success, 
-        hasResponse: !!data.data?.response 
-      })
-
-      if (data.success) {
+      if (response.success && response.data) {
         const assistantMessage: Message = {
           id: generateId(),
           user_id: 'current-user',
           role: 'assistant',
-          content: data.data.response,
+          content: response.data.response,
           task_id: currentTaskId,
-          emotion_score: data.data.emotionScore,
+          emotion_score: response.data.emotionScore,
           created_at: new Date().toISOString()
         }
 
         setMessages(prev => [...prev, assistantMessage])
 
         // 如果需要情绪输入
-        if (data.data.needsEmotionInput || data.data.emotionScore <= 6) {
+        if (response.data.needsEmotionInput || response.data.emotionScore <= 6) {
           setShowEmotionInput(true)
-          setSuggestedEmotionScore(data.data.emotionScore)
+          setSuggestedEmotionScore(response.data.emotionScore)
         }
 
-        // 如果创建了新任务
-        if (data.data.task) {
-          onTaskCreate?.(data.data.task)
-          setCurrentTaskId(data.data.task.id)
+        // 如果有建议的操作
+        if (response.data.suggestedActions?.includes('task_decomposition')) {
+          // TODO: 处理任务拆解建议
         }
       } else {
-        throw new Error(data.error?.message || '未知错误')
+        throw new Error(response.error?.message || '未知错误')
       }
     } catch (error) {
+      console.error('聊天请求失败:', error)
+      
+      let errorContent = '抱歉，发生了一些错误：'
+      if (error instanceof Error) {
+        errorContent += error.message
+      } else {
+        errorContent += '请稍后重试'
+      }
+
       const errorMessage: Message = {
         id: generateId(),
         user_id: 'current-user',
         role: 'assistant',
-        content: `抱歉，发生了一些错误：${error instanceof Error ? error.message : '请稍后重试'}`,
+        content: errorContent,
         created_at: new Date().toISOString()
       }
       setMessages(prev => [...prev, errorMessage])
@@ -212,6 +291,16 @@ export function ChatInterface({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* 网络状态指示器 */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs ${
+              isOnline 
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
+                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+            }`}>
+              {isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
+              {isOnline ? '在线' : '离线'}
+            </div>
+            
             <Button 
               variant="ghost" 
               size="sm"
@@ -231,6 +320,9 @@ export function ChatInterface({
               清空对话
             </Button>
           </div>
+        </div>
+        <div className="mt-2">
+          <PomodoroTimer compact />
         </div>
       </div>
 
@@ -277,7 +369,7 @@ export function ChatInterface({
                   <Sparkles className="w-4 h-4 text-white animate-pulse" />
                 </div>
                 <div className="typing-indicator">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">AI正在思考</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">AI正在思考...</span>
                   <div className="flex gap-1">
                     <div className="typing-dot"></div>
                     <div className="typing-dot"></div>
@@ -312,19 +404,19 @@ export function ChatInterface({
             onKeyPress={handleKeyPress}
             placeholder="告诉我你现在的任务或感受..."
             className="input-textarea"
-            disabled={isLoading}
             rows={1}
+            disabled={isLoading}
           />
           <button 
-            onClick={handleSendMessage}
-            disabled={isLoading || !input.trim()}
+            onClick={() => handleSendMessage()}
+            disabled={isLoading}
             className="send-button"
           >
             <Send className="w-4 h-4" />
-            发送
+            {isLoading ? '排队发送' : '发送'}
           </button>
         </div>
       </div>
     </div>
   )
-} 
+}

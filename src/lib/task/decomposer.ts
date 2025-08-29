@@ -48,7 +48,7 @@ export class TaskDecomposer {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          model: 'Qwen/Qwen3-30B-A3B-Thinking-2507',
           messages: [{
             role: 'system',
             content: prompt
@@ -150,4 +150,4 @@ export class TaskDecomposer {
       }`
     }
   }
-} 
+}

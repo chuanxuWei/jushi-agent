@@ -8,13 +8,15 @@ const createJestConfig = nextJest({
 // 自定义 Jest 配置
 const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     // 处理模块别名（这与 tsconfig.json 和 next.config.js 中的路径匹配）
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
     '^@/app/(.*)$': '<rootDir>/src/app/$1',
+    // 测试中通过 jest.setup.js 进行 mock，因此无需特殊映射
   },
+  transformIgnorePatterns: ['/node_modules/'],
   testEnvironment: 'jest-environment-jsdom',
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',

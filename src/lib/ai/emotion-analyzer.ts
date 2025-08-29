@@ -1,35 +1,38 @@
-import { OpenAI } from 'openai'
 import { EmotionAnalysis } from '@/types'
 
 export class EmotionAnalyzer {
-  private client: OpenAI | null = null
+  private apiKey: string | undefined
+  private baseURL = 'https://api.siliconflow.cn/v1'
 
   constructor() {
-    // 只有在有有效API密钥时才初始化客户端
-    if (process.env.SILICONFLOW_API_KEY && process.env.SILICONFLOW_API_KEY !== 'test-api-key') {
-      this.client = new OpenAI({
-        apiKey: process.env.SILICONFLOW_API_KEY,
-        baseURL: "https://api.siliconflow.cn/v1",
-      })
-      console.log('情绪分析器: API客户端初始化成功')
-    } else {
+    this.apiKey = process.env.SILICONFLOW_API_KEY || undefined
+    if (!this.apiKey) {
       console.warn('情绪分析器: API密钥未配置，将使用模拟数据')
+    } else {
+      console.log('情绪分析器: API密钥已配置')
     }
   }
 
   async analyzeEmotion(text: string): Promise<EmotionAnalysis> {
     // 如果没有配置有效的API密钥，返回模拟结果
-    if (!this.client) {
+    if (!this.apiKey) {
       console.warn('API密钥未配置或无效，使用模拟数据')
       return this.getMockEmotionAnalysis(text)
     }
 
     try {
-      const response = await this.client.chat.completions.create({
-        model: 'Qwen/Qwen2.5-72B-Instruct',
-        messages: [{
-          role: 'system',
-          content: `你是专业的情绪分析师。分析用户文本中的情绪状态，返回1-10分的评分和情绪标签。
+      const response = await fetch(`${this.baseURL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            {
+              role: 'system',
+              content: `你是专业的情绪分析师。分析用户文本中的情绪状态，返回1-10分的评分和情绪标签。
 
 评分标准：
 1-3分：重度焦虑/抑郁
@@ -41,15 +44,20 @@ export class EmotionAnalyzer {
 格式：{"score": 数字, "tags": ["标签1", "标签2"], "reasoning": "简短分析原因"}
 
 要求简洁准确，重点关注焦虑程度。`
-        }, {
-          role: 'user',
-          content: `请分析这段文字的情绪：${text}`
-        }],
-        max_tokens: 150, // 大幅减少token使用
-        temperature: 0.2, // 降低随机性，提高一致性和速度
+            },
+            { role: 'user', content: `请分析这段文字的情绪：${text}` },
+          ],
+          max_tokens: 150,
+          temperature: 0.2,
+        }),
       })
 
-      const result = response.choices[0]?.message?.content?.trim()
+      if (!response.ok) {
+        throw new Error(`API请求失败: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      const result = data.choices?.[0]?.message?.content?.trim()
       if (!result) {
         throw new Error('API返回空结果')
       }
@@ -84,8 +92,8 @@ export class EmotionAnalyzer {
       }
 
     } catch (error: any) {
-      console.error('API调用失败，使用模拟数据:', error)
-      return this.getMockEmotionAnalysis(text)
+      console.error('API调用失败，抛出错误:', error)
+      throw error
     }
   }
 
@@ -150,4 +158,4 @@ export class EmotionAnalyzer {
     const analysis = await this.analyzeEmotion(userInput)
     return analysis.score
   }
-} 
+}

@@ -135,7 +135,7 @@ CREATE TABLE growth_notes (
 **优势**：
 - **免费额度**：新用户注册送2000万tokens，够开发和初期运营使用
 - **价格低廉**：付费后约0.001元/1000tokens，比OpenAI便宜90%+
-- **模型选择多**：支持deepseek-chat、Qwen2.5等多个开源模型
+- **模型选择多**：支持Qwen3-30B-A3B-Thinking-2507、deepseek-chat、Qwen2.5等多个开源模型
 - **接口兼容**：完全兼容OpenAI API格式，迁移简单
 - **响应速度快**：国内服务，延迟低
 
@@ -169,6 +169,25 @@ CREATE TABLE growth_notes (
 - **OpenAI GPT-4**：约600-800元/月
 
 **建议**：强烈推荐使用硅基流动API，免费额度足够支撑整个MVP开发和初期运营。
+
+### Qwen3-30B-A3B-Thinking-2507 模型特性
+
+**模型优势**：
+- **思维链推理**：具备强大的逐步推理能力，特别适合复杂的情绪分析和任务拆解
+- **中文优化**：对中文理解和生成能力极强，适合中国大学生用户群体
+- **大参数量**：30B参数提供更准确的推理和更细腻的情绪理解
+- **A3B架构**：优化的注意力机制，提供更好的上下文理解
+
+**适用场景**：
+- 复杂情绪状态的精准分析
+- 多层次任务拆解的逻辑推理
+- 个性化建议的生成
+- 用户心理状态的深度理解
+
+**使用建议**：
+- 适当增加 `max_tokens` 到 3000-4000，充分利用思维链推理
+- 设置 `temperature` 为 0.3-0.5，平衡创造性和准确性
+- 在 system prompt 中明确要求展示推理过程
 
 ### 1. 用户认证模块
 ```typescript
@@ -216,14 +235,14 @@ export class ConversationAgent {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat', // 或 'Qwen/Qwen2.5-7B-Instruct'
+        model: 'Qwen/Qwen3-30B-A3B-Thinking-2507', // 思维链推理模型
         messages: [
           { role: 'system', content: systemPrompt },
           ...conversationHistory,
           { role: 'user', content: userMessage }
         ],
-        temperature: 0.7,
-        max_tokens: 2000,
+        temperature: 0.4, // 降低随机性，提高推理准确性
+        max_tokens: 3500, // 增加token限制，支持思维链推理
         stream: false
       })
     })
@@ -233,15 +252,38 @@ export class ConversationAgent {
   }
 
   private buildSystemPrompt(emotionScore: number, profile: UserProfile): string {
-    // 根据情绪评分和用户画像构建系统提示
-    let prompt = "你是聚时AI助手，专门帮助大学生缓解焦虑并完成任务规划..."
+    // 根据情绪评分和用户画像构建系统提示，充分利用思维链推理
+    let prompt = `你是聚时AI助手，专门帮助大学生缓解焦虑并完成任务规划。
+
+请按照以下步骤进行思考和回应：
+1. 首先分析用户的情绪状态和需求
+2. 考虑用户的个人画像和习惯偏好
+3. 制定合适的沟通策略和建议方案
+4. 给出温暖、实用的回应
+
+用户画像信息：${JSON.stringify(profile)}
+当前情绪评分：${emotionScore}/10
+
+`
     
     if (emotionScore <= 3) {
-      prompt += "用户现在处于重度焦虑状态，需要极度温和的语气和原子级任务拆解..."
+      prompt += `用户现在处于重度焦虑状态，请：
+- 使用极度温和、理解的语气
+- 提供原子级的任务拆解（每步5分钟内完成）
+- 给予情绪支持和鼓励
+- 避免增加任何压力`
     } else if (emotionScore <= 6) {
-      prompt += "用户现在处于中度焦虑状态，需要流程化的任务拆解..."
+      prompt += `用户现在处于中度焦虑状态，请：
+- 使用温和、支持性的语气
+- 提供流程化的任务拆解，包含时间预估
+- 给出具体的执行建议
+- 适度鼓励和引导`
     } else {
-      prompt += "用户现在状态较好，可以进行目标导向的任务拆解..."
+      prompt += `用户现在状态较好，可以：
+- 使用积极、协作的语气
+- 进行目标导向的任务拆解
+- 提供框架性指导
+- 鼓励用户自主思考和调整`
     }
     
     return prompt
@@ -292,7 +334,51 @@ export class DoubaoConversationAgent {
 }
 ```
 
-### 3. 情绪评估模块
+### 3. 针对 Qwen3-30B-A3B-Thinking-2507 的优化配置
+
+```typescript
+// lib/ai/qwen-config.ts
+export const QwenThinkingConfig = {
+  model: 'Qwen/Qwen3-30B-A3B-Thinking-2507',
+  temperature: 0.4,
+  max_tokens: 4000,
+  top_p: 0.8,
+  frequency_penalty: 0.1,
+  presence_penalty: 0.1,
+  // 启用思维链推理的特殊配置
+  response_format: { type: 'json_object' }, // 当需要结构化输出时
+  stream: false // 思维链推理建议关闭流式输出
+}
+
+// 专门的思维链提示模板
+export const ThinkingChainPrompts = {
+  emotionAnalysis: `请使用思维链方法分析用户情绪：
+
+<thinking>
+1. 文本表面含义分析
+2. 隐含情绪识别
+3. 行动意愿评估
+4. 焦虑程度判断
+5. 综合评分推理
+</thinking>
+
+基于以上分析，给出结构化结果。`,
+
+  taskDecomposition: `请使用思维链方法拆解任务：
+
+<thinking>
+1. 任务复杂度分析
+2. 用户当前状态考虑
+3. 拆解粒度确定
+4. 时间估算推理
+5. 执行顺序优化
+</thinking>
+
+基于以上思考，提供详细的任务拆解方案。`
+}
+```
+
+### 4. 情绪评估模块
 ```typescript
 // lib/emotion/analyzer.ts
 export class EmotionAnalyzer {
@@ -311,7 +397,7 @@ export class EmotionAnalyzer {
     
     const model = this.useDoubao 
       ? 'ep-20241230140932-z8wss' // 替换为您的豆包端点ID
-      : 'deepseek-chat'
+      : 'Qwen/Qwen3-30B-A3B-Thinking-2507'
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -323,23 +409,33 @@ export class EmotionAnalyzer {
         model,
         messages: [{
           role: 'system',
-          content: `你是专业的情绪分析师。分析用户文本中的情绪状态，严格按照JSON格式返回：
-          {
-            "score": 1到10的整数,
-            "tags": ["标签1", "标签2"],
-            "reasoning": "分析原因"
-          }
-          
-          评分标准：
-          1-3分：重度焦虑（完全无法动手、频繁自我否定、回避任务）
-          4-6分：中度焦虑（犹豫拖延、担心做不好、步骤混乱）
-          7-10分：轻度焦虑/平静（有行动力、仅需轻微引导、明确目标）`
+          content: `你是专业的情绪分析师。请使用思维链推理分析用户文本中的情绪状态。
+
+请按以下步骤思考：
+1. 识别文本中的关键情绪词汇和表达
+2. 分析用户的行动意愿和自信程度
+3. 评估焦虑程度和具体表现
+4. 综合判断情绪评分
+
+最后严格按照JSON格式返回：
+{
+  "thinking_process": "你的分析思路和推理过程",
+  "score": 1到10的整数,
+  "tags": ["具体的情绪标签"],
+  "reasoning": "最终评分的详细原因",
+  "suggestions": ["针对性的建议"]
+}
+
+评分标准：
+1-3分：重度焦虑（完全无法动手、频繁自我否定、回避任务、绝望感）
+4-6分：中度焦虑（犹豫拖延、担心做不好、步骤混乱、需要引导）
+7-10分：轻度焦虑/平静（有行动力、仅需轻微引导、明确目标、积极状态）`
         }, {
           role: 'user',
           content: text
         }],
-        temperature: 0.3,
-        max_tokens: 500
+        temperature: 0.2, // 更低的随机性，确保情绪分析准确性
+        max_tokens: 800 // 增加token限制，支持详细的推理过程
       })
     })
 
@@ -813,8 +909,9 @@ SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # AI API 配置（选择其中一个）
-# 硅基流动（推荐）
+# 硅基流动（推荐）- 使用 Qwen3-30B-A3B-Thinking-2507
 SILICONFLOW_API_KEY=your-siliconflow-api-key
+SILICONFLOW_MODEL=Qwen/Qwen3-30B-A3B-Thinking-2507
 
 # 或者 火山引擎豆包
 DOUBAO_API_KEY=your-doubao-api-key

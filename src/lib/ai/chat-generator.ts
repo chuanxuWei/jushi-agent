@@ -28,7 +28,7 @@ export class ChatGenerator {
       const systemPrompt = this.buildEnhancedSystemPrompt(emotionScore, emotionTags)
       
       const response = await this.client.chat.completions.create({
-        model: 'Qwen/Qwen2.5-72B-Instruct', // 使用硅基流动支持的Qwen模型
+        model: 'Qwen/Qwen3-30B-A3B-Thinking-2507', // 使用硅基流动支持的Qwen模型
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
@@ -170,4 +170,4 @@ ${this.getResponseStrategy(emotionScore)}
     const responseList = responses[category as keyof typeof responses]
     return responseList[Math.floor(Math.random() * responseList.length)]
   }
-} 
+}
